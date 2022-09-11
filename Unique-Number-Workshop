@@ -1,0 +1,530 @@
+<p align="center">
+  <a href="" rel="noopener">
+ <img src="https://docs.reach.sh/assets/logo.png" alt="Project logo"></a>
+</p>
+<h3 align="center">Unique Number Game</h3>
+
+<div align="center">
+
+
+</div>
+
+---
+
+<p align="center"> Workshop For Unique Number Game
+    <br> 
+</p>
+
+# Introduction
+
+This is a self study walk through of my decentralized Umoja 3 Bounty Hack. In this workshop I will be giving you a top to bottom run down of how to create your decentralized application using reach. 
+
+This workshop is designed to help direct you along the path of learning effective use of Reach and points out for you some of the design decisions that Reach programmers often make.
+
+The Unique Number Game is a game where a predetermined set of random numbers are been generated and the two players are to make their individual guesses, if they guess a unique number they win the game and the wager between the two players.
+
+## Installation and Configurations
+
+These setup methods are for Mac OS users for windows users you can check out this [link](https://docs.reach.sh/guide/windows/#guide-windows)
+
+- You will need to install `make` which comes with every mac and also install `Docker `
+
+- To verify if every thing is installed properly run the following commands on your terminal
+```bash
+make --version
+```
+```bash
+docker --version
+```
+```bash
+docker-compose --version
+```
+If all this runs succesfully without any errors you are good to go to the next step
+
+- Lets create a directory for this project. I would recommend using 
+```bash
+mkdir -p ~/reach/unique-number-game && cd ~/reach/unique-number-game
+```
+- Next lets install reach using the command below
+```bash
+curl https://docs.reach.sh/reach -o reach ; chmod +x reach
+```
+Run ```./reach version``` on your terminal to verify if reach was installed properly
+
+- For the next step make sure your docker is open, then navigate to the directory we just created i.e `reach/unique-number-game` then open it on your vs code, once in your vs code open the folder ans create 2 files namely `index.mjs` and `index.rsh` once done open an integrated terminal and run the following command to install the images
+```bash
+./reach update
+```
+this is done on your first time using reach beacause reach needs those images to function ideally.
+
+Now that we have finally installed all our requirements we can dive into the fun part.
+
+# Deep-Dive
+
+In this section we would be breaking down the `index.rsh` file I wrote for my project into snippets and I would be explaining each snippet to my best knowledege.
+
+Lets begin.
+
+```js
+"reach 0.1";
+//Outcome array
+const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3); 
+
+//This computes the winner of the game
+const winner = (x, hand1, hand2) => {
+  if (x.includes(hand1) && !x.includes(hand2)){
+    return A_WINS;
+  }
+  else if(!x.includes(hand1) && x.includes(hand2)){
+    return B_WINS;
+  }
+  else if (x.includes(hand1) && x.includes(hand2)){
+    return DRAW;
+  }
+  else  return DRAW;
+
+};
+```
+- To indicate to the compiler that this is a reach file we would have to include the first line `"reach 0.1"`
+- The next block of code is used to represent the possible outcomes of the game.
+- The function `winner` is uses the array x and the guesses if both Alice and Bob as arguments to get the outcome of the game.
+
+```js
+/ Generates the random number
+const combineRandom1 = (randomAlice1, randomBob1) => {
+  const result1 = randomAlice1 + randomBob1;
+  return result1;
+};
+const combineRandom2 = (randomAlice2, randomBob2) => {
+    const result2 = randomAlice2 + randomBob2;
+    return result2;
+  };
+  const combineRandom3 = (randomAlice3, randomBob3) => {
+    const result3 = randomAlice3 + randomBob3;
+    return result3;
+  };
+  const combineRandom4 = (randomAlice4, randomBob4) => {
+    const result4 = randomAlice4 + randomBob4;
+    return result4;
+  };
+  const combineRandom5 = (randomAlice5, randomBob5) => {
+    const result5 = randomAlice5 + randomBob5;
+    return result5;
+  };
+  ```
+  - Here I created some functions to generate the random number of the game.
+  - The idea I implemented in generating the random number is that Alice and Bob both generate a random number within a predetermined range under the hood and the function `combineRandom` is used to combine both Alice and Bobs random number to generate the set of unique numbers in the game, making it impossible for Alice or Bob to cheat.
+
+  ```js
+  const payWinner = (outcome, wager, Alice, Bob) => {
+  if (outcome == DRAW) {
+    each([Alice, Bob], () => {
+      interact.seeOutcome(outcome)
+    });
+    transfer(wager).to(Alice);
+    transfer(wager).to(Bob);
+  }
+  else if(outcome == A_WINS) {
+    transfer(2*wager).to(Alice);
+    each([Alice, Bob], () => {
+      interact.seeOutcome(outcome);
+    });
+  }
+  else {
+    transfer(2*wager).to(Bob);
+    each([Alice, Bob], () => {
+      interact.seeOutcome(outcome);
+    });
+  }
+}
+  ```
+- The `payWinner` function is used to transfer out the wager at the end of the game depending on the outcome of the game.
+- This function is also used at the end of the game to show the paricipants the outcome of the game.
+
+```js
+const Player = {
+  ...hasRandom,
+  getHand: Fun([], UInt),
+  seeOutcome: Fun([UInt], Null),
+  informTimeout: Fun([], Null),
+  getRandom1: Fun([], UInt),
+  getRandom2:Fun([], UInt),
+  getRandom3:Fun([], UInt),
+  getRandom4:Fun([], UInt),
+  getRandom5:Fun([], UInt),
+};
+```
+- The fucntion `Player` is used to define the players common abilities i.e the common actions or the functions each player can interact with.
+- `getHand` is used to get their guesses
+- `seeOutcome` is used to see the outcome of the game
+- `informTimeout` is activated when a player takes too much time to respond and you would see the implementation later on in this workshop.
+- `getRandom` is  used to get the random numbers that would be computed eventually to generate the unique numbers. There are 5 unique numbers so this is done 5 times.
+
+```js
+export const main = Reach.App(() => {
+//Alice interface
+  const Alice = Participant('Alice', {
+    ...Player,
+    wager: UInt, 
+    deadline: UInt,
+    
+  });
+//Bob interface
+  const Bob   = Participant('Bob', {
+    ...Player,
+    acceptWager: Fun([UInt], Null),
+    
+  });
+  init();
+```
+-  Here I defined alice and bob's interface passing the Player functions and their special individual functions.
+
+```js
+  const informTimeout = () => {
+    each([Alice, Bob], () => {
+      interact.informTimeout();
+    });
+  };
+
+  const seeOutcome = (outcome) => {
+    each([Alice, Bob], () => {
+      interact.seeOutcome(outcome);
+    });
+  };
+//Alice wager and the deadline for the timeout
+  Alice.only(() => {
+    const wager = declassify(interact.wager);
+    const deadline = declassify(interact.deadline);
+    const randomAlice1 = declassify(interact.getRandom1());
+    const randomAlice2 = declassify(interact.getRandom2());
+    const randomAlice3 = declassify(interact.getRandom3());
+    const randomAlice4 = declassify(interact.getRandom4());
+    const randomAlice5 = declassify(interact.getRandom5());
+   
+  });
+  Alice.publish(wager, deadline, randomAlice1, randomAlice2, randomAlice3, randomAlice4, randomAlice5)
+    .pay(wager);
+  commit();
+```
+- `informTimeout` is used when a player takes too long to respond and the both players interact with the function in the frontend.
+- `seeOutcome` is  used to  displaye the outcome of the  game  either Alice wins or Bob wins or its a draw.
+- Next alice interacts with her funtions setting the wager and returning it to the backend, the keyword `declassify` is important because in reach when trying to access variables that have been passed from the frontend to the backend they are initially classified or we can call it encrypted so the `declassify` keyword is used to decrypt the variable so it can be accessible and used for any form of computation in the backend.
+- Alice then publishes the outputs of her interacts to the blockchain, if this step is skipped the outputs of her interact cannot be used in the backend cause it is not know by the blockchain by default.
+- Alice then pays the wager and makes a commit which signifies the end of the present consensus step.
+
+```js
+//Bob accepting or rejecting the wager
+  Bob.only(() => {
+    interact.acceptWager(wager);
+    const randomBob1 = declassify(interact.getRandom1());
+    const randomBob2 = declassify(interact.getRandom2());
+    const randomBob3 = declassify(interact.getRandom3());
+    const randomBob4 = declassify(interact.getRandom4());
+    const randomBob5 = declassify(interact.getRandom5());
+    
+  });
+  Bob.publish(randomBob1, randomBob2, randomBob3, randomBob4, randomBob5)
+  .pay(wager)
+    .timeout(relativeTime(deadline), () => closeTo(Alice, informTimeout));
+
+
+//The random number
+  const random1 = combineRandom1(randomAlice1, randomBob1);
+  const random2 = combineRandom2(randomAlice2, randomBob2);
+  const random3 = combineRandom3(randomAlice3, randomBob3);
+  const random4 = combineRandom4(randomAlice4, randomBob4);
+  const random5 = combineRandom5(randomAlice5, randomBob5);
+
+  const x = array(UInt, [random1, random2, random3, random4, random5] );
+```
+- Here Bob also interacts with his own functions and publishes the output of his interact to the blockchain as well
+- Then he pays the wager into the contract.
+
+NOTE: You must `publish` before you `pay` 
+
+- Here we call the combineRandom functions and we pass it into `random 1, 2,3,4,5` respectively. Then we create an array x which wew  would use to store the random numbers(unique numbers)
+
+```js
+var [hand1, hand2 ] = [0,0];
+  invariant( balance() == 2 * wager);
+
+  while (!x.includes(hand1) && !x.includes(hand2)) {
+    commit();
+
+    Alice.only(() => {
+      const _handAlice = interact.getHand();
+      
+      const [_commitAlice, _saltAlice] = makeCommitment(interact, _handAlice);
+      const commitAlice = declassify(_commitAlice);
+      });
+    Alice.publish(commitAlice)
+      .timeout(relativeTime(deadline), () => closeTo(Bob, informTimeout));
+    commit();
+
+    unknowable(Bob, Alice(_handAlice, _saltAlice));
+    Bob.only(() => {
+      const handBob = declassify(interact.getHand());
+      
+    });
+    Bob.publish(handBob)
+      .timeout(relativeTime(deadline), () => closeTo(Alice, informTimeout));
+    commit();
+
+    Alice.only(() => {
+      const saltAlice = declassify(_saltAlice);
+      const handAlice = declassify(_handAlice);
+    });
+    Alice.publish(saltAlice, handAlice)
+      .timeout(relativeTime(deadline), () => closeTo(Bob, informTimeout));
+    checkCommitment(commitAlice, saltAlice, handAlice);
+    
+  //Outcome = winner(getResult1,handAlice, handBob);
+    [hand1, hand2] = [handAlice, handBob];
+    continue;
+
+  }
+  ```
+- Now this ia the tricky part, in reach using a while loop this is the synatax below
+```js
+var LHS = INIT_EXPR;
+DEFINE_BLOCK; // optional
+invariant(INVARIANT_EXPR, ?INVARIANT_MSG);
+while( COND_EXPR ) BLOCK
+```
+where `LHS` is a valid left-hand side of an identifier definition where the expression `INIT_EXPR` is the right-hand side, and  `DEFINE_BLOCK` is an optional block that may define bindings that use the `LHS` values which are bound inside the rest of the while and its tail, and  `INVARIANT_EXPR` is an expression, called the loop invariant, that must be true before and after every execution of the block `BLOCK`—it may be specified multiple times, `INVARIANT_MSG` is an optional bytes argument, which is included in any reported violation, and if `COND_EXPR` is true, then the block executes, and if not, then the loop terminates and control transfers to the continuation of the while statement. The identifiers bound by LHS are bound within `DEFINE_BLOCK`, `INVARIANT_EXPR`, `COND_EXPR`, `BLOCK`, and the tail of the while statement.
+
+- The `var` is a variable that the values can change unlike a const which is a constant and must remain that. `hand1` and `hand2` is currently 0 but we will refer back to it.
+- The invariant is a statement that must be true throughout the code, i.e before and after the while loop, if this is false at any time during compilation it would return a theorem violation error.
+- The begining of the while loop and using the following conditions the while loop continues until either of the conditions are met, the idea is that the players keep on playing until either of them get the correct answer, if they both get the right answer on the same round the  game ends as a draw and the contract gives them back their wager and triggers them to play again.
+- Alice interacts with the get hand function and the input is stores in `_handAlice` which is then passed through a makeCommitment function which returns a commit and salt for the input where salt is the result of calling interact.random(), and  commitment is the digest of salt and _handAlice. This helps to make the input of Alice hidden before revealing at the same time when Bob interacts with the same function making it impossible to cheat.
+- Is used to verify that alice guess is unknown to Bob.
+- Bob interacts with the `getHand` function i.e inputing his/her guess.
+- And the next line bob publishes his input, but the next is used so bobs input is been displayed at the same time alice input was displayed to avoid any form of unfairness.
+- Is used to declassify alice salt and digest, publishes it and displays it at the same time bob displays his/hers.
+- Is used to verify if that commitment is the digest of saltAlice and handAlice.
+- Is a continue statement which is a terminator statement, so it must have an empty tail.
+```js
+  //Using the winner function with arguments of the users inputs and the random number to get the winner
+  const outcome = winner(x, hand1, hand2);
+  seeOutcome(outcome);
+
+//Uses the outcome to pay the winner
+  payWinner(outcome,wager, Alice, Bob);
+
+  commit();
+
+});
+```
+- The `winner` function is been called with the correct arguments to determine the outcome of the game.
+- The `payWinner` function with the valid arguments to pay the wager according to the outcome of the game.
+- And line 153 is the final commit for the reach smart contract.
+This is the end of the `index.rsh` file 
+
+For the complete index.rsh file
+```js
+"reach 0.1";
+//Outcome array
+const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3); 
+
+//This computes the winner of the game
+const winner = (x, hand1, hand2) => {
+  if (x.includes(hand1) && !x.includes(hand2)){
+    return A_WINS;
+  }
+  else if(!x.includes(hand1) && x.includes(hand2)){
+    return B_WINS;
+  }
+  else if (x.includes(hand1) && x.includes(hand2)){
+    return DRAW;
+  }
+  else  return DRAW;
+
+};
+// Generates the random number
+const combineRandom1 = (randomAlice1, randomBob1) => {
+  const result1 = randomAlice1 + randomBob1;
+  return result1;
+};
+const combineRandom2 = (randomAlice2, randomBob2) => {
+    const result2 = randomAlice2 + randomBob2;
+    return result2;
+  };
+  const combineRandom3 = (randomAlice3, randomBob3) => {
+    const result3 = randomAlice3 + randomBob3;
+    return result3;
+  };
+  const combineRandom4 = (randomAlice4, randomBob4) => {
+    const result4 = randomAlice4 + randomBob4;
+    return result4;
+  };
+  const combineRandom5 = (randomAlice5, randomBob5) => {
+    const result5 = randomAlice5 + randomBob5;
+    return result5;
+  };
+
+
+// Makes the required payment to the winner
+const payWinner = (outcome, wager, Alice, Bob) => {
+  if (outcome == DRAW) {
+    each([Alice, Bob], () => {
+      interact.seeOutcome(outcome)
+    });
+    transfer(wager).to(Alice);
+    transfer(wager).to(Bob);
+  }
+  else if(outcome == A_WINS) {
+    transfer(2*wager).to(Alice);
+    each([Alice, Bob], () => {
+      interact.seeOutcome(outcome);
+    });
+  }
+  else {
+    transfer(2*wager).to(Bob);
+    each([Alice, Bob], () => {
+      interact.seeOutcome(outcome);
+    });
+  }
+}
+
+
+//Player abilities
+const Player = {
+  ...hasRandom,
+  getHand: Fun([], UInt),
+  seeOutcome: Fun([UInt], Null),
+  informTimeout: Fun([], Null),
+  getRandom1: Fun([], UInt),
+  getRandom2:Fun([], UInt),
+  getRandom3:Fun([], UInt),
+  getRandom4:Fun([], UInt),
+  getRandom5:Fun([], UInt),
+};
+
+
+export const main = Reach.App(() => {
+//Alice interface
+  const Alice = Participant('Alice', {
+    ...Player,
+    wager: UInt, 
+    deadline: UInt,
+    
+  });
+//Bob interface
+  const Bob   = Participant('Bob', {
+    ...Player,
+    acceptWager: Fun([UInt], Null),
+    
+  });
+  init();
+
+  const informTimeout = () => {
+    each([Alice, Bob], () => {
+      interact.informTimeout();
+    });
+  };
+
+  const seeOutcome = (outcome) => {
+    each([Alice, Bob], () => {
+      interact.seeOutcome(outcome);
+    });
+  };
+//Alice wager and the deadline for the timeout
+  Alice.only(() => {
+    const wager = declassify(interact.wager);
+    const deadline = declassify(interact.deadline);
+    const randomAlice1 = declassify(interact.getRandom1());
+    const randomAlice2 = declassify(interact.getRandom2());
+    const randomAlice3 = declassify(interact.getRandom3());
+    const randomAlice4 = declassify(interact.getRandom4());
+    const randomAlice5 = declassify(interact.getRandom5());
+   
+  });
+  Alice.publish(wager, deadline, randomAlice1, randomAlice2, randomAlice3, randomAlice4, randomAlice5)
+    .pay(wager);
+  commit();
+
+
+
+//Bob accepting or rejecting the wager
+  Bob.only(() => {
+    interact.acceptWager(wager);
+    const randomBob1 = declassify(interact.getRandom1());
+    const randomBob2 = declassify(interact.getRandom2());
+    const randomBob3 = declassify(interact.getRandom3());
+    const randomBob4 = declassify(interact.getRandom4());
+    const randomBob5 = declassify(interact.getRandom5());
+    
+  });
+  Bob.publish(randomBob1, randomBob2, randomBob3, randomBob4, randomBob5)
+  .pay(wager)
+    .timeout(relativeTime(deadline), () => closeTo(Alice, informTimeout));
+
+
+//The random number
+  const random1 = combineRandom1(randomAlice1, randomBob1);
+  const random2 = combineRandom2(randomAlice2, randomBob2);
+  const random3 = combineRandom3(randomAlice3, randomBob3);
+  const random4 = combineRandom4(randomAlice4, randomBob4);
+  const random5 = combineRandom5(randomAlice5, randomBob5);
+
+  const x = array(UInt, [random1, random2, random3, random4, random5] );
+
+//While loop that loops 3 times  if the users inputs arent correct
+  var [hand1, hand2 ] = [0,0];
+  invariant( balance() == 2 * wager);
+
+  while (!x.includes(hand1) && !x.includes(hand2)) {
+    commit();
+
+    Alice.only(() => {
+      const _handAlice = interact.getHand();
+      
+      const [_commitAlice, _saltAlice] = makeCommitment(interact, _handAlice);
+      const commitAlice = declassify(_commitAlice);
+      });
+    Alice.publish(commitAlice)
+      .timeout(relativeTime(deadline), () => closeTo(Bob, informTimeout));
+    commit();
+
+    unknowable(Bob, Alice(_handAlice, _saltAlice));
+    Bob.only(() => {
+      const handBob = declassify(interact.getHand());
+      
+    });
+    Bob.publish(handBob)
+      .timeout(relativeTime(deadline), () => closeTo(Alice, informTimeout));
+    commit();
+
+    Alice.only(() => {
+      const saltAlice = declassify(_saltAlice);
+      const handAlice = declassify(_handAlice);
+    });
+    Alice.publish(saltAlice, handAlice)
+      .timeout(relativeTime(deadline), () => closeTo(Bob, informTimeout));
+    checkCommitment(commitAlice, saltAlice, handAlice);
+    
+  //Outcome = winner(getResult1,handAlice, handBob);
+    [hand1, hand2] = [handAlice, handBob];
+    continue;
+
+  }
+  //Using the winner function with arguments of the users inputs and the random number to get the winner
+  const outcome = winner(x, hand1, hand2);
+  seeOutcome(outcome);
+
+//Uses the outcome to pay the winner
+  payWinner(outcome,wager, Alice, Bob);
+
+  commit();
+
+});
+```
+For the link to the repo click [here](https://github.com/RIDLEY2005/REACH-HACK)
+
+# Discussion 
+
+Congrats for finishing this workshop. You just implemented the unique number game that runs on the algorand blockchain yourself.
+
+If you found this workshop rewarding please let us know on the [Discord Community](https://discord.gg/AZsgcXu).
+
+Thanks You for your time.
