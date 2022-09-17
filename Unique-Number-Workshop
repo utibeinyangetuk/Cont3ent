@@ -12,12 +12,12 @@
 ---
 
 <p align="center"> Workshop For Unique Number Game
-    <br> 
+    <br>
 </p>
 
 # Introduction
 
-This is a self study walk through of my decentralized Umoja 3 Bounty Hack. In this workshop I will be giving you a top to bottom run down of how to create your decentralized application using reach. 
+This is a self study walk through of my decentralized Umoja 3 Bounty Hack. In this workshop I will be giving you a top to bottom run down of how to create your decentralized application using reach.
 
 This workshop is designed to help direct you along the path of learning effective use of Reach and points out for you some of the design decisions that Reach programmers often make.
 
@@ -41,7 +41,7 @@ docker-compose --version
 ```
 If all this runs succesfully without any errors you are good to go to the next step
 
-- Lets create a directory for this project. I would recommend using 
+- Lets create a directory for this project. I would recommend using
 ```bash
 mkdir -p ~/reach/unique-number-game && cd ~/reach/unique-number-game
 ```
@@ -68,7 +68,7 @@ Lets begin.
 ```js
 "reach 0.1";
 //Outcome array
-const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3); 
+const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
 
 //This computes the winner of the game
 const winner = (x, hand1, hand2) => {
@@ -162,18 +162,20 @@ const Player = {
 
 ```js
 export const main = Reach.App(() => {
+  
 //Alice interface
   const Alice = Participant('Alice', {
     ...Player,
-    wager: UInt, 
+    wager: UInt,
     deadline: UInt,
-    
+
   });
+
 //Bob interface
   const Bob   = Participant('Bob', {
     ...Player,
     acceptWager: Fun([UInt], Null),
-    
+
   });
   init();
 ```
@@ -191,6 +193,7 @@ export const main = Reach.App(() => {
       interact.seeOutcome(outcome);
     });
   };
+
 //Alice wager and the deadline for the timeout
   Alice.only(() => {
     const wager = declassify(interact.wager);
@@ -200,7 +203,7 @@ export const main = Reach.App(() => {
     const randomAlice3 = declassify(interact.getRandom3());
     const randomAlice4 = declassify(interact.getRandom4());
     const randomAlice5 = declassify(interact.getRandom5());
-   
+
   });
   Alice.publish(wager, deadline, randomAlice1, randomAlice2, randomAlice3, randomAlice4, randomAlice5)
     .pay(wager);
@@ -221,7 +224,7 @@ export const main = Reach.App(() => {
     const randomBob3 = declassify(interact.getRandom3());
     const randomBob4 = declassify(interact.getRandom4());
     const randomBob5 = declassify(interact.getRandom5());
-    
+
   });
   Bob.publish(randomBob1, randomBob2, randomBob3, randomBob4, randomBob5)
   .pay(wager)
@@ -240,7 +243,7 @@ export const main = Reach.App(() => {
 - Here Bob also interacts with his own functions and publishes the output of his interact to the blockchain as well
 - Then he pays the wager into the contract.
 
-NOTE: You must `publish` before you `pay` 
+NOTE: You must `publish` before you `pay`
 
 - Here we call the combineRandom functions and we pass it into `random 1, 2,3,4,5` respectively. Then we create an array x which wew  would use to store the random numbers(unique numbers)
 
@@ -253,7 +256,7 @@ var [hand1, hand2 ] = [0,0];
 
     Alice.only(() => {
       const _handAlice = interact.getHand();
-      
+
       const [_commitAlice, _saltAlice] = makeCommitment(interact, _handAlice);
       const commitAlice = declassify(_commitAlice);
       });
@@ -264,7 +267,7 @@ var [hand1, hand2 ] = [0,0];
     unknowable(Bob, Alice(_handAlice, _saltAlice));
     Bob.only(() => {
       const handBob = declassify(interact.getHand());
-      
+
     });
     Bob.publish(handBob)
       .timeout(relativeTime(deadline), () => closeTo(Alice, informTimeout));
@@ -277,7 +280,7 @@ var [hand1, hand2 ] = [0,0];
     Alice.publish(saltAlice, handAlice)
       .timeout(relativeTime(deadline), () => closeTo(Bob, informTimeout));
     checkCommitment(commitAlice, saltAlice, handAlice);
-    
+
   //Outcome = winner(getResult1,handAlice, handBob);
     [hand1, hand2] = [handAlice, handBob];
     continue;
@@ -318,13 +321,13 @@ where `LHS` is a valid left-hand side of an identifier definition where the expr
 - The `winner` function is been called with the correct arguments to determine the outcome of the game.
 - The `payWinner` function with the valid arguments to pay the wager according to the outcome of the game.
 - And line 153 is the final commit for the reach smart contract.
-This is the end of the `index.rsh` file 
+This is the end of the `index.rsh` file
 
 For the complete index.rsh file
 ```js
 "reach 0.1";
 //Outcome array
-const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3); 
+const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
 
 //This computes the winner of the game
 const winner = (x, hand1, hand2) => {
@@ -405,15 +408,15 @@ export const main = Reach.App(() => {
 //Alice interface
   const Alice = Participant('Alice', {
     ...Player,
-    wager: UInt, 
+    wager: UInt,
     deadline: UInt,
-    
+
   });
 //Bob interface
   const Bob   = Participant('Bob', {
     ...Player,
     acceptWager: Fun([UInt], Null),
-    
+
   });
   init();
 
@@ -437,7 +440,7 @@ export const main = Reach.App(() => {
     const randomAlice3 = declassify(interact.getRandom3());
     const randomAlice4 = declassify(interact.getRandom4());
     const randomAlice5 = declassify(interact.getRandom5());
-   
+
   });
   Alice.publish(wager, deadline, randomAlice1, randomAlice2, randomAlice3, randomAlice4, randomAlice5)
     .pay(wager);
@@ -453,7 +456,7 @@ export const main = Reach.App(() => {
     const randomBob3 = declassify(interact.getRandom3());
     const randomBob4 = declassify(interact.getRandom4());
     const randomBob5 = declassify(interact.getRandom5());
-    
+
   });
   Bob.publish(randomBob1, randomBob2, randomBob3, randomBob4, randomBob5)
   .pay(wager)
@@ -478,7 +481,7 @@ export const main = Reach.App(() => {
 
     Alice.only(() => {
       const _handAlice = interact.getHand();
-      
+
       const [_commitAlice, _saltAlice] = makeCommitment(interact, _handAlice);
       const commitAlice = declassify(_commitAlice);
       });
@@ -489,7 +492,7 @@ export const main = Reach.App(() => {
     unknowable(Bob, Alice(_handAlice, _saltAlice));
     Bob.only(() => {
       const handBob = declassify(interact.getHand());
-      
+
     });
     Bob.publish(handBob)
       .timeout(relativeTime(deadline), () => closeTo(Alice, informTimeout));
@@ -502,7 +505,7 @@ export const main = Reach.App(() => {
     Alice.publish(saltAlice, handAlice)
       .timeout(relativeTime(deadline), () => closeTo(Bob, informTimeout));
     checkCommitment(commitAlice, saltAlice, handAlice);
-    
+
   //Outcome = winner(getResult1,handAlice, handBob);
     [hand1, hand2] = [handAlice, handBob];
     continue;
@@ -521,7 +524,7 @@ export const main = Reach.App(() => {
 ```
 For the link to the repo click [here](https://github.com/RIDLEY2005/REACH-HACK)
 
-# Discussion 
+# Discussion
 
 Congrats for finishing this workshop. You just implemented the unique number game that runs on the algorand blockchain yourself.
 
